@@ -679,10 +679,16 @@ async function handleSaveEdit() {
         return;
     }
 
-    // Chuẩn bị data - price phải là số nguyên theo yêu cầu API
+    // Lấy thông tin product hiện tại để giữ categoryId và images
+    const currentProduct = allProducts.find(p => p.id === parseInt(productId));
+
+    // Chuẩn bị data đầy đủ theo yêu cầu API
     const updateData = {
         title: title,
-        price: Math.round(price)  // API yêu cầu số nguyên
+        price: Math.round(price),
+        description: description || 'No description',
+        categoryId: currentProduct?.category?.id || 1,
+        images: currentProduct?.images || ["https://placehold.co/600x400"]
     };
 
     try {
@@ -711,6 +717,7 @@ async function handleSaveEdit() {
         showToast('error', 'Lỗi!', 'Không thể cập nhật sản phẩm. Vui lòng thử lại.');
     }
 }
+
 
 /**
  * Xử lý tạo sản phẩm mới
