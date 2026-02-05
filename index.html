@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Dashboard - NNPTUD</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-box-seam"></i> Product Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="text-center mb-3">
+                    <i class="bi bi-grid-3x3-gap-fill text-primary"></i> Quản lý Sản phẩm
+                </h2>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <!-- Search Box -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-primary text-white">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" 
+                                   id="searchInput" 
+                                   class="form-control" 
+                                   placeholder="Tìm kiếm theo tên sản phẩm...">
+                        </div>
+                    </div>
+
+                    <!-- Items Per Page -->
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <span class="input-group-text">Hiển thị</span>
+                            <select id="itemsPerPage" class="form-select">
+                                <option value="5">5 items</option>
+                                <option value="10" selected>10 items</option>
+                                <option value="20">20 items</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Export CSV Button -->
+                    <div class="col-md-2">
+                        <button id="exportCsvBtn" class="btn btn-success w-100">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+                        </button>
+                    </div>
+
+                    <!-- Create Product Button -->
+                    <div class="col-md-3">
+                        <button id="createProductBtn" 
+                                class="btn btn-primary w-100"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#createModal">
+                            <i class="bi bi-plus-circle"></i> Create Product
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
+        </div>
+
+        <!-- Products Table -->
+        <div class="card shadow-sm" id="tableCard" style="display: none;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0" id="productsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="sortable" data-sort="id">
+                                    ID <i class="bi bi-arrow-down-up sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="title">
+                                    Title <i class="bi bi-arrow-down-up sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-sort="price">
+                                    Price <i class="bi bi-arrow-down-up sort-icon"></i>
+                                </th>
+                                <th>Category</th>
+                                <th>Image</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <!-- Products will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3" style="display: none;">
+            <div class="text-muted" id="paginationInfo">
+                <!-- Pagination info will be inserted here -->
+            </div>
+            <nav aria-label="Product pagination">
+                <ul class="pagination mb-0" id="paginationList">
+                    <!-- Pagination buttons will be inserted here -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Detail/Edit Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="detailModalLabel">
+                        <i class="bi bi-info-circle"></i> Chi tiết sản phẩm
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProductForm">
+                        <input type="hidden" id="editProductId">
+                        
+                        <div class="row">
+                            <!-- Left Column - Form -->
+                            <div class="col-md-7">
+                                <div class="mb-3">
+                                    <label for="editTitle" class="form-label fw-bold">Title</label>
+                                    <input type="text" class="form-control" id="editTitle" readonly>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editPrice" class="form-label fw-bold">Price ($)</label>
+                                    <input type="number" class="form-control" id="editPrice" readonly>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editDescription" class="form-label fw-bold">Description</label>
+                                    <textarea class="form-control" id="editDescription" rows="4" readonly></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editCategory" class="form-label fw-bold">Category</label>
+                                    <input type="text" class="form-control" id="editCategory" readonly>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Column - Images -->
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">Images</label>
+                                <div id="detailImages" class="d-flex flex-wrap gap-2">
+                                    <!-- Images will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Đóng
+                    </button>
+                    <button type="button" class="btn btn-warning" id="toggleEditBtn">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button type="button" class="btn btn-success d-none" id="saveEditBtn">
+                        <i class="bi bi-check-circle"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Product Modal -->
+    <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="createModalLabel">
+                        <i class="bi bi-plus-circle"></i> Tạo sản phẩm mới
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createProductForm">
+                        <div class="mb-3">
+                            <label for="createTitle" class="form-label fw-bold">
+                                Title <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="createTitle" required 
+                                   placeholder="Nhập tên sản phẩm">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="createPrice" class="form-label fw-bold">
+                                Price ($) <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="createPrice" required 
+                                   placeholder="Nhập giá sản phẩm" min="1">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="createDescription" class="form-label fw-bold">
+                                Description <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="createDescription" rows="3" required
+                                      placeholder="Nhập mô tả sản phẩm"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="createCategoryId" class="form-label fw-bold">
+                                Category ID <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="createCategoryId" required>
+                                <option value="">-- Chọn danh mục --</option>
+                                <option value="1">Clothes</option>
+                                <option value="2">Electronics</option>
+                                <option value="3">Furniture</option>
+                                <option value="4">Shoes</option>
+                                <option value="5">Others</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="createImages" class="form-label fw-bold">
+                                Images (URLs) <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="createImages" rows="2" required
+                                      placeholder="Nhập link ảnh (mỗi link một dòng)">https://placehold.co/600x400</textarea>
+                            <small class="text-muted">Mỗi link ảnh trên một dòng</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" id="submitCreateBtn">
+                        <i class="bi bi-check-circle"></i> Tạo sản phẩm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi bi-bell me-2"></i>
+                <strong class="me-auto" id="toastTitle">Thông báo</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                <!-- Message will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main JavaScript -->
+    <script src="main.js"></script>
+</body>
+</html>
